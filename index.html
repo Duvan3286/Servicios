@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pagos — Servicios Públicos</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+    background: #f0f2f5;
+    min-height: 100vh;
+    padding: 32px 16px;
+    color: #1a1a2e;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+  header h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    letter-spacing: -0.3px;
+  }
+  header p {
+    margin-top: 6px;
+    font-size: 0.92rem;
+    color: #6b7280;
+  }
+  .month-badge {
+    display: inline-block;
+    margin-top: 10px;
+    background: #1a1a2e;
+    color: #fff;
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 4px 14px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+    max-width: 960px;
+    margin: 0 auto;
+  }
+
+  .card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 24px 22px 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    border-top: 5px solid var(--accent);
+    transition: box-shadow 0.2s, opacity 0.2s, filter 0.2s;
+  }
+  .card:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.11); }
+  .card.paid {
+    opacity: 0.75;
+    filter: grayscale(0.6);
+    border-top-color: #10b981 !important;
+  }
+  .paid-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    color: #4b5563;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .paid-checkbox input {
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    accent-color: #10b981;
+  }
+
+  .card-header { display: flex; align-items: center; gap: 12px; }
+  .icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    background: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+  }
+  .card-title h2 { font-size: 1rem; font-weight: 700; color: #1a1a2e; }
+  .card-title span { font-size: 0.8rem; color: #6b7280; font-weight: 500; }
+
+  .ref-display {
+    background: #f8f9fa;
+    border: 1px dashed #c1c9d2;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 0.85rem;
+    color: #4b5563;
+  }
+
+  .card-actions { display: flex; gap: 8px; }
+
+  .btn-pay {
+    flex: 1;
+    padding: 10px 0;
+    border-radius: 10px;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  .btn-pay:hover { opacity: 0.88; transform: translateY(-1px); }
+  .btn-pay:active { transform: translateY(0); }
+  .btn-pay.disabled {
+    background: #d1d5db;
+    cursor: not-allowed;
+    transform: none;
+    pointer-events: none;
+  }
+
+  .btn-edit {
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1.5px solid #e5e7eb;
+    background: #fff;
+    cursor: pointer;
+    font-size: 0.95rem;
+    color: #6b7280;
+    transition: border-color 0.15s, color 0.15s;
+    display: flex; align-items: center;
+  }
+  .btn-edit:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Modal */
+  .overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  .overlay.active { display: flex; }
+
+  .modal {
+    background: #fff;
+    border-radius: 16px;
+    padding: 28px 24px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  }
+  .modal h3 { font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+  .modal p { font-size: 0.82rem; color: #6b7280; margin-bottom: 16px; }
+  .modal input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 10px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+    font-size: 0.85rem;
+    color: #1a1a2e;
+    outline: none;
+    transition: border-color 0.15s;
+    margin-bottom: 16px;
+  }
+  .modal input:focus { border-color: #4f46e5; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+  .btn-cancel {
+    padding: 9px 18px;
+    border-radius: 9px;
+    border: 1.5px solid #e5e7eb;
+    background: #fff;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+    font-size: 0.85rem;
+    cursor: pointer;
+    color: #6b7280;
+  }
+  .btn-save {
+    padding: 9px 20px;
+    border-radius: 9px;
+    border: none;
+    background: #1a1a2e;
+    color: #fff;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  footer {
+    text-align: center;
+    margin-top: 36px;
+    font-size: 0.78rem;
+    color: #c1c9d2;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>💳 Servicios Públicos</h1>
+  <!-- <p>Brisas del Campo — Armenia, Quindío</p> -->
+  <div class="month-badge" id="month-badge">—</div>
+</header>
+
+<div class="grid" id="cards-container"></div>
+
+<footer>Haga clic en ✏️ para actualizar el enlace de pago de cada servicio.</footer>
+
+<!-- Modal -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h3 id="modal-title">Editar enlace</h3>
+    <p>Pegue la URL de la plataforma de pago para este servicio.</p>
+    <input type="url" id="modal-input" placeholder="https://...">
+    <div id="modal-ref-container" style="display:none;">
+      <p style="margin-top: 16px; margin-bottom: 8px;">Referencia de pago (opcional)</p>
+      <input type="text" id="modal-input-ref" placeholder="Ej. 123456789">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-save" onclick="saveUrl()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const SERVICES = [
+    { id: 'epa',   label: 'Agua',       company: 'EPA',          icon: '💧', accent: '#0ea5e9', hasRef: true },
+    { id: 'edeq',  label: 'Energía',    company: 'EDEQ',         icon: '⚡', accent: '#f59e0b', hasRef: true },
+    { id: 'efigas',label: 'Gas',        company: 'Efigas',       icon: '🔥', accent: '#ef4444', hasRef: true },
+    { id: 'admin', label: 'Administración', company: 'Conjunto', icon: '🏢', accent: '#8b5cf6', hasRef: false },
+  ];
+
+  const KEY = 'pago_urls_v1';
+  const KEY_REF = 'pago_refs_v1';
+  const KEY_PAID = 'pago_paid_v1';
+
+  function loadUrls() {
+    try { return JSON.parse(localStorage.getItem(KEY)) || {}; }
+    catch { return {}; }
+  }
+
+  function saveUrls(obj) {
+    localStorage.setItem(KEY, JSON.stringify(obj));
+  }
+
+  function loadRefs() {
+    try { return JSON.parse(localStorage.getItem(KEY_REF)) || {}; }
+    catch { return {}; }
+  }
+
+  function saveRefs(obj) {
+    localStorage.setItem(KEY_REF, JSON.stringify(obj));
+  }
+
+  function loadPaid() {
+    try { return JSON.parse(localStorage.getItem(KEY_PAID)) || {}; }
+    catch { return {}; }
+  }
+
+  function savePaid(obj) {
+    localStorage.setItem(KEY_PAID, JSON.stringify(obj));
+  }
+
+  function togglePaid(id, isPaid) {
+    const paids = loadPaid();
+    if (isPaid) { paids[id] = true; }
+    else { delete paids[id]; }
+    savePaid(paids);
+    renderCards();
+  }
+
+  function renderCards() {
+    const urls = loadUrls();
+    const refs = loadRefs();
+    const paids = loadPaid();
+    const container = document.getElementById('cards-container');
+    container.innerHTML = '';
+
+    SERVICES.forEach(s => {
+      const url = urls[s.id] || '';
+      const ref = refs[s.id] || '';
+      const isPaid = !!paids[s.id];
+      const hasUrl = url.trim() !== '';
+      const hasRefText = ref.trim() !== '';
+
+      const card = document.createElement('div');
+      card.className = 'card' + (isPaid ? ' paid' : '');
+      card.style.setProperty('--accent', s.accent);
+      
+      let refHtml = '';
+      if (s.hasRef && hasRefText) {
+        refHtml = `
+          <div class="ref-display">
+            <strong>Referencia:</strong> ${ref}
+          </div>
+        `;
+      }
+
+      card.innerHTML = `
+        <div class="card-header" style="justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div class="icon">${s.icon}</div>
+            <div class="card-title">
+              <h2>${s.label}</h2>
+              <span>${s.company}</span>
+            </div>
+          </div>
+          <label class="paid-checkbox">
+            <input type="checkbox" onchange="togglePaid('${s.id}', this.checked)" ${isPaid ? 'checked' : ''}>
+            Pagado
+          </label>
+        </div>
+
+        ${refHtml}
+
+        <div class="card-actions">
+          <a
+            class="btn-pay ${hasUrl ? '' : 'disabled'}"
+            href="${hasUrl ? url : '#'}"
+            ${hasUrl ? 'target="_blank" rel="noopener"' : ''}
+          >
+            💳 Ir a pagar
+          </a>
+          <button class="btn-edit" onclick="openModal('${s.id}', '${s.label}', '${s.company}', ${s.hasRef})">✏️</button>
+        </div>
+      `;
+      container.appendChild(card);
+    });
+  }
+
+  let currentEditId = null;
+
+  function openModal(id, label, company, hasRef) {
+    currentEditId = id;
+    const urls = loadUrls();
+    const refs = loadRefs();
+    document.getElementById('modal-title').textContent = `Editar — ${label} (${company})`;
+    document.getElementById('modal-input').value = urls[id] || '';
+    
+    const refContainer = document.getElementById('modal-ref-container');
+    if (hasRef) {
+      refContainer.style.display = 'block';
+      document.getElementById('modal-input-ref').value = refs[id] || '';
+    } else {
+      refContainer.style.display = 'none';
+      document.getElementById('modal-input-ref').value = '';
+    }
+
+    document.getElementById('overlay').classList.add('active');
+    setTimeout(() => document.getElementById('modal-input').focus(), 80);
+  }
+
+  function closeModal() {
+    document.getElementById('overlay').classList.remove('active');
+    currentEditId = null;
+  }
+
+  function saveUrl() {
+    if (!currentEditId) return;
+    const val = document.getElementById('modal-input').value.trim();
+    const refVal = document.getElementById('modal-input-ref') ? document.getElementById('modal-input-ref').value.trim() : '';
+    const urls = loadUrls();
+    
+    if (val) { urls[currentEditId] = val; }
+    else { delete urls[currentEditId]; }
+    saveUrls(urls);
+    
+    const service = SERVICES.find(s => s.id === currentEditId);
+    if (service && service.hasRef) {
+      const refs = loadRefs();
+      if (refVal) { refs[currentEditId] = refVal; }
+      else { delete refs[currentEditId]; }
+      saveRefs(refs);
+    }
+
+    closeModal();
+    renderCards();
+  }
+
+  document.getElementById('overlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('overlay')) closeModal();
+  });
+
+  document.getElementById('modal-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') saveUrl();
+    if (e.key === 'Escape') closeModal();
+  });
+  
+  document.getElementById('modal-input-ref').addEventListener('keydown', e => {
+    if (e.key === 'Enter') saveUrl();
+    if (e.key === 'Escape') closeModal();
+  });
+
+  // Badge mes actual
+  const now = new Date();
+  const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  document.getElementById('month-badge').textContent = `${meses[now.getMonth()]} ${now.getFullYear()}`;
+
+  renderCards();
+</script>
+</body>
+</html>
