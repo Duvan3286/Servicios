@@ -44,7 +44,7 @@
 
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
     gap: 20px;
     max-width: 960px;
     margin: 0 auto;
@@ -83,7 +83,7 @@
     accent-color: #10b981;
   }
 
-  .card-header { display: flex; align-items: center; gap: 12px; }
+  .card-header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
   .icon {
     width: 44px; height: 44px;
     border-radius: 12px;
@@ -104,7 +104,7 @@
     color: #4b5563;
   }
 
-  .card-actions { display: flex; gap: 8px; }
+  .card-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
   .btn-pay {
     flex: 1;
@@ -208,6 +208,22 @@
     font-size: 0.78rem;
     color: #c1c9d2;
   }
+  @media (prefers-color-scheme: dark) {
+    body { background: #111827; color: #f3f4f6; }
+    header h1 { color: #f9fafb; }
+    header p, .card-title span { color: #9ca3af; }
+    .month-badge { background: #f3f4f6; color: #111827; }
+    .card { background: #1f2937; box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
+    .card-title h2 { color: #f9fafb; }
+    .paid-checkbox { color: #9ca3af; }
+    .ref-display { background: #374151; border-color: #4b5563; color: #d1d5db; }
+    .modal { background: #1f2937; }
+    .modal h3 { color: #f9fafb; }
+    .modal p { color: #9ca3af; }
+    .modal input { background: #374151; border-color: #4b5563; color: #f9fafb; }
+    .btn-cancel { background: #374151; border-color: #4b5563; color: #d1d5db; }
+    .btn-save { background: #f3f4f6; color: #111827; }
+  }
 </style>
 </head>
 <body>
@@ -219,8 +235,6 @@
 </header>
 
 <div class="grid" id="cards-container"></div>
-
-<footer>Haga clic en ✏️ para actualizar el enlace de pago de cada servicio.</footer>
 
 <!-- Modal -->
 <div class="overlay" id="overlay">
@@ -241,10 +255,10 @@
 
 <script>
   const SERVICES = [
-    { id: 'epa',   label: 'Agua',       company: 'EPA',          icon: '💧', accent: '#0ea5e9', hasRef: true },
-    { id: 'edeq',  label: 'Energía',    company: 'EDEQ',         icon: '⚡', accent: '#f59e0b', hasRef: true },
-    { id: 'efigas',label: 'Gas',        company: 'Efigas',       icon: '🔥', accent: '#ef4444', hasRef: true },
-    { id: 'admin', label: 'Administración', company: 'Conjunto', icon: '🏢', accent: '#8b5cf6', hasRef: false },
+    { id: 'epa',   label: 'Agua',       company: 'EPA',          icon: '💧', accent: '#0ea5e9', hasRef: true, ref: '142317', url: 'https://epa-epayco-prd.saas.arqbs.com/' },
+    { id: 'edeq',  label: 'Energía',    company: 'EDEQ',         icon: '⚡', accent: '#f59e0b', hasRef: true, ref: '291138', url: 'https://edeq.epayco.co/' },
+    { id: 'efigas',label: 'Gas',        company: 'Efigas',       icon: '🔥', accent: '#ef4444', hasRef: true, ref: '915964', url: 'https://portal.efigas.com.co/payments' },
+    { id: 'admin', label: 'Administración', company: 'Brisas del campo', icon: '🏢', accent: '#8b5cf6', hasRef: false, ref: '901137028', url: 'https://www.psepagos.co/PSEHostingUI/ShowTicketOffice.aspx?ID=1906' },
   ];
 
   const KEY = 'pago_urls_v1';
@@ -294,8 +308,8 @@
     container.innerHTML = '';
 
     SERVICES.forEach(s => {
-      const url = urls[s.id] || '';
-      const ref = refs[s.id] || '';
+      const url = urls[s.id] || s.url || '';
+      const ref = refs[s.id] || s.ref || '';
       const isPaid = !!paids[s.id];
       const hasUrl = url.trim() !== '';
       const hasRefText = ref.trim() !== '';
@@ -305,7 +319,7 @@
       card.style.setProperty('--accent', s.accent);
       
       let refHtml = '';
-      if (s.hasRef && hasRefText) {
+      if (hasRefText) {
         refHtml = `
           <div class="ref-display">
             <strong>Referencia:</strong> ${ref}
@@ -338,7 +352,6 @@
           >
             💳 Ir a pagar
           </a>
-          <button class="btn-edit" onclick="openModal('${s.id}', '${s.label}', '${s.company}', ${s.hasRef})">✏️</button>
         </div>
       `;
       container.appendChild(card);
